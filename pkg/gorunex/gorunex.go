@@ -3,7 +3,7 @@ package gorunex
 import (
 	"bytes"
 	"fmt"
-	"github.com/fpawel/elco/pkg/winapp"
+	"github.com/fpawel/gohelp/winapp"
 	"github.com/fpawel/gorunex/pkg/ccolor"
 	"github.com/maruel/panicparse/stack"
 	"github.com/powerman/structlog"
