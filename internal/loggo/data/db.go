@@ -39,6 +39,20 @@ func (x *DB) Close() error {
 	return x.db.Close()
 }
 
+func (x *DB) WriteRawMessage(msg string) {
+	x.mu.Lock()
+	defer x.mu.Unlock()
+	r := x.db.MustExec(`INSERT INTO entry(msg) VALUES (?)`, msg)
+	entryID, err := r.LastInsertId()
+	if err != nil {
+		panic(err)
+	}
+	x.db.MustExec(`INSERT INTO meta(entry_id, tag, value) VALUES (?,?,?), (?,?,?)`,
+		entryID, structlog.KeyApp, x.exeName,
+		entryID, structlog.KeyPID, os.Getpid(),
+	)
+}
+
 func (x *DB) Write(p []byte) (int, error) {
 	if !bytes.HasSuffix(p, []byte("\n")) {
 		x.s += string(p)
@@ -46,24 +60,7 @@ func (x *DB) Write(p []byte) (int, error) {
 	}
 	msg := x.s + string(p)
 	x.s = ""
-	go func() {
-		x.mu.Lock()
-		defer x.mu.Unlock()
-		if x.kind == KindText {
-
-			r := x.db.MustExec(`INSERT INTO entry(msg) VALUES (?)`, msg)
-
-			entryID, err := r.LastInsertId()
-			if err != nil {
-				panic(err)
-			}
-
-			x.db.MustExec(`INSERT INTO meta(entry_id, tag, value) VALUES (?,?,?), (?,?,?)`,
-				entryID, structlog.KeyApp, x.exeName,
-				entryID, structlog.KeyPID, os.Getpid(),
-			)
-		}
-	}()
+	go x.WriteRawMessage(msg)
 
 	return len(p), nil
 }
