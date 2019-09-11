@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/fpawel/gotools/pkg/myrungo"
+	"github.com/fpawel/gotools/pkg/rungo"
 	"log"
 )
 
@@ -15,8 +15,8 @@ func main() {
 
 	flag.Parse()
 
-	log.Println("log file:", myrungo.LogFileName())
-	if err := myrungo.Process(exeName, args, nil); err != nil {
+	log.Println("log file:", rungo.LogFileName())
+	if err := rungo.Process(exeName, args, nil); err != nil {
 		log.Fatal(err)
 	}
 }

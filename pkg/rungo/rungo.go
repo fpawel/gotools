@@ -8,7 +8,6 @@ import (
 	"github.com/maruel/panicparse/stack"
 	"github.com/powerman/structlog"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,16 +27,36 @@ func LogFileName() string {
 	return filepath.Join(logDir, fmt.Sprintf("%s.log", t.Format("2006-01-02")))
 }
 
-func Process(exeName string, args string, onPanic func(), writers ...io.Writer) error {
-	logFile := newLogFileOutput()
+type Cmd struct {
+	ExeName    string
+	ExeArgs    string
+	UseLogfile bool
+	NotifyGUI  NotifyGUI
+}
 
-	defer structlog.New().ErrIfFail(logFile.Close)
+type NotifyGUI struct {
+	Use            bool
+	MsgCodeConsole uintptr
+	MsgCodePanic   uintptr
+	WindowClass    string
+}
 
+func (c Cmd) Exec() error {
 	panicOutput := bytes.NewBuffer(nil)
+	writers := []io.Writer{panicOutput}
+	if c.UseLogfile {
+		logFile := newLogFileOutput()
+		defer log.ErrIfFail(logFile.Close)
+		writers = append(writers, logFile)
+	}
+	var notifier notifyWriter
+	if c.NotifyGUI.Use {
+		notifier = c.NotifyGUI.newWriter()
+		defer notifier.w.Close()
+		writers = append(writers, notifier)
+	}
 
-	writers = append(writers, logFile, panicOutput)
-
-	cmd := exec.Command(exeName, strings.Fields(args)...)
+	cmd := exec.Command(c.ExeName, strings.Fields(c.ExeArgs)...)
 	cmd.Stderr = io.MultiWriter(append(writers, ccolor.NewWriter(os.Stderr))...)
 	cmd.Stdout = io.MultiWriter(append(writers, ccolor.NewWriter(os.Stdout))...)
 	if err := cmd.Start(); err != nil {
@@ -47,20 +66,15 @@ func Process(exeName string, args string, onPanic func(), writers ...io.Writer) 
 	if err == nil {
 		return nil
 	}
-	if onPanic != nil {
-		onPanic()
-	}
-	if _, err := fmt.Fprintln(cmd.Stderr, err); err != nil {
-		return err
-	}
-	panicContent := bytes.NewBuffer(nil)
-	if err := parseDump(panicOutput, panicContent); err != nil {
+	panicContentBuff := bytes.NewBuffer(nil)
+	if err := parseDump(panicOutput, panicContentBuff); err != nil {
 		return fmt.Errorf("unknown panic: %v", err)
 	}
-	if _, err := io.WriteString(cmd.Stderr, "panic occurred!\n"); err != nil {
-		return err
+	panicContent := panicContentBuff.String()
+	if c.NotifyGUI.Use && c.NotifyGUI.MsgCodePanic > -1 {
+		go notifier.w.NotifyStr(c.NotifyGUI.MsgCodePanic, panicContent)
 	}
-	if _, err := panicContent.WriteTo(cmd.Stderr); err != nil {
+	if _, err := cmd.Stderr.Write([]byte(panicContent)); err != nil {
 		return err
 	}
 	return nil
@@ -125,25 +139,4 @@ func parseDump(in io.Reader, out io.Writer) error {
 	return nil
 }
 
-func newLogFileOutput() io.WriteCloser {
-	logFile, err := os.OpenFile(LogFileName(), os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return logFileOutput{logFile}
-}
-
-type logFileOutput struct {
-	logFile *os.File
-}
-
-func (x logFileOutput) Close() error {
-	return x.logFile.Close()
-}
-
-func (x logFileOutput) Write(p []byte) (int, error) {
-	if _, err := fmt.Fprint(x.logFile, time.Now().Format("15:04:05"), " "); err != nil {
-		return 0, err
-	}
-	return x.logFile.Write(p)
-}
+var log = structlog.New()
