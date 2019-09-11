@@ -16,3 +16,4 @@ __recovery/
 *.stat
 *.vlb
 *.rsm
+*_generated.go

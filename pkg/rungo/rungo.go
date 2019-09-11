@@ -3,39 +3,24 @@ package rungo
 import (
 	"bytes"
 	"fmt"
-	"github.com/fpawel/gohelp/winapp"
+	"github.com/fpawel/gotools/internal/loggo/data"
 	"github.com/fpawel/gotools/pkg/ccolor"
 	"github.com/maruel/panicparse/stack"
 	"github.com/powerman/structlog"
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
-	"time"
 )
 
-func LogFileName() string {
-	exeDir := filepath.Dir(os.Args[0])
-	t := time.Now()
-	logDir := filepath.Join(exeDir, "logs")
-
-	if err := winapp.EnsuredDirectory(logDir); err != nil {
-		log.Fatal(err)
-	}
-
-	return filepath.Join(logDir, fmt.Sprintf("%s.log", t.Format("2006-01-02")))
-}
-
 type Cmd struct {
-	ExeName    string
-	ExeArgs    string
-	UseLogfile bool
-	NotifyGUI  NotifyGUI
+	ExeName   string
+	ExeArgs   string
+	UseGUI    bool
+	NotifyGUI NotifyGUI
 }
 
 type NotifyGUI struct {
-	Use            bool
 	MsgCodeConsole uintptr
 	MsgCodePanic   uintptr
 	WindowClass    string
@@ -43,16 +28,14 @@ type NotifyGUI struct {
 
 func (c Cmd) Exec() error {
 	panicOutput := bytes.NewBuffer(nil)
-	writers := []io.Writer{panicOutput}
-	if c.UseLogfile {
-		logFile := newLogFileOutput()
-		defer log.ErrIfFail(logFile.Close)
-		writers = append(writers, logFile)
-	}
+	db := data.New(data.KindText, c.ExeName)
+	defer log.ErrIfFail(db.Close)
+	writers := []io.Writer{panicOutput, db}
+
 	var notifier notifyWriter
-	if c.NotifyGUI.Use {
+
+	if c.UseGUI {
 		notifier = c.NotifyGUI.newWriter()
-		defer notifier.w.Close()
 		writers = append(writers, notifier)
 	}
 
@@ -62,6 +45,7 @@ func (c Cmd) Exec() error {
 	if err := cmd.Start(); err != nil {
 		return err
 	}
+
 	err := cmd.Wait()
 	if err == nil {
 		return nil
@@ -71,7 +55,7 @@ func (c Cmd) Exec() error {
 		return fmt.Errorf("unknown panic: %v", err)
 	}
 	panicContent := panicContentBuff.String()
-	if c.NotifyGUI.Use && c.NotifyGUI.MsgCodePanic > -1 {
+	if c.UseGUI {
 		go notifier.w.NotifyStr(c.NotifyGUI.MsgCodePanic, panicContent)
 	}
 	if _, err := cmd.Stderr.Write([]byte(panicContent)); err != nil {
