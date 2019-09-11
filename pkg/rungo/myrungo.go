@@ -1,4 +1,4 @@
-package myrungo
+package rungo
 
 import (
 	"bytes"
