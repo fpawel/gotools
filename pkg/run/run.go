@@ -1,10 +1,10 @@
-package gorunex
+package run
 
 import (
 	"bytes"
 	"fmt"
 	"github.com/fpawel/gohelp/winapp"
-	"github.com/fpawel/gorunex/pkg/ccolor"
+	"github.com/fpawel/gotools/pkg/ccolor"
 	"github.com/maruel/panicparse/stack"
 	"github.com/powerman/structlog"
 	"io"
@@ -47,27 +47,22 @@ func Process(exeName string, args string, onPanic func(), writers ...io.Writer) 
 	if err == nil {
 		return nil
 	}
-
 	if onPanic != nil {
 		onPanic()
 	}
-
 	if _, err := fmt.Fprintln(cmd.Stderr, err); err != nil {
 		return err
 	}
-
 	panicContent := bytes.NewBuffer(nil)
 	if err := parseDump(panicOutput, panicContent); err != nil {
 		return fmt.Errorf("unknown panic: %v", err)
 	}
-
 	if _, err := io.WriteString(cmd.Stderr, "panic occurred!\n"); err != nil {
 		return err
 	}
 	if _, err := panicContent.WriteTo(cmd.Stderr); err != nil {
 		return err
 	}
-
 	return nil
 }
 
