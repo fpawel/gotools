@@ -29,15 +29,19 @@ type NotifyGUI struct {
 }
 
 func (c Cmd) Exec() {
-	logFileOutput := newLogFileOutput()
+
+	log.Info(fmt.Sprintf("run command: %+v", c))
+
+	logFileOutput := NewLogFileOutput()
 	defer log.ErrIfFail(logFileOutput.Close)
 
 	writers := []io.Writer{logFileOutput}
 
-	var notifier notifyWriter
+	var w *copydata.NotifyWindow
 	if c.UseGUI {
-		notifier = c.NotifyGUI.newWriter()
-		writers = append(writers, notifier)
+		writer := NewNotifyGUIWriter(c.NotifyGUI.WindowClass, c.NotifyGUI.MsgCodeConsole)
+		writers = append(writers, writer)
+		w = writer.(notifyWriter).w
 	}
 
 	cmd := exec.Command(c.ExeName, strings.Fields(c.ExeArgs)...)
@@ -49,9 +53,25 @@ func (c Cmd) Exec() {
 		return
 	}
 	log.PrintErr(err)
-	if c.UseGUI {
-		go notifier.w.NotifyStr(c.NotifyGUI.MsgCodePanic, err.Error())
+	if w != nil {
+		go w.NotifyStr(c.NotifyGUI.MsgCodePanic, err.Error())
 	}
+}
+
+func NewNotifyGUIWriter(windowClass string, msgCodeConsole uintptr) io.Writer {
+	s := fmt.Sprintf("%s%d", os.Args[0], time.Now().Unix())
+	return notifyWriter{
+		w: copydata.NewNotifyWindow(s, windowClass),
+		c: msgCodeConsole,
+	}
+}
+
+func NewLogFileOutput() io.WriteCloser {
+	f, err := os.OpenFile(logFileName(), os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		panic(err)
+	}
+	return &logFileOutput{f: f}
 }
 
 func (c Cmd) exec(cmd *exec.Cmd) error {
@@ -62,16 +82,6 @@ func (c Cmd) exec(cmd *exec.Cmd) error {
 		return err
 	}
 	return nil
-}
-
-var log = structlog.New()
-
-func newLogFileOutput() io.WriteCloser {
-	logFile, err := os.OpenFile(logFileName(), os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return &logFileOutput{f: logFile}
 }
 
 type logFileOutput struct {
@@ -112,14 +122,6 @@ func logFileName() string {
 	return filepath.Join(logDir, fmt.Sprintf("%s.log", t.Format("2006-01-02")))
 }
 
-func (c NotifyGUI) newWriter() notifyWriter {
-	s := fmt.Sprintf("%s%d", os.Args[0], time.Now().Unix())
-	return notifyWriter{
-		w: copydata.NewNotifyWindow(s, c.WindowClass),
-		c: c.MsgCodeConsole,
-	}
-}
-
 type notifyWriter struct {
 	w *copydata.NotifyWindow
 	c uintptr
@@ -129,3 +131,5 @@ func (x notifyWriter) Write(p []byte) (int, error) {
 	go x.w.NotifyStr(x.c, string(p))
 	return len(p), nil
 }
+
+var log = structlog.New()
