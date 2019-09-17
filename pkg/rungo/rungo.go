@@ -3,8 +3,8 @@ package rungo
 import (
 	"bytes"
 	"fmt"
+	"github.com/fpawel/gohelp"
 	"github.com/fpawel/gohelp/copydata"
-	"github.com/fpawel/gohelp/winapp"
 	"github.com/fpawel/gotools/pkg/ccolor"
 	"github.com/powerman/structlog"
 	"io"
@@ -115,7 +115,7 @@ func logFileName() string {
 	t := time.Now()
 	logDir := filepath.Join(exeDir, "logs")
 
-	if err := winapp.EnsuredDirectory(logDir); err != nil {
+	if err := gohelp.EnsuredDir(logDir); err != nil {
 		panic(err)
 	}
 
