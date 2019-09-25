@@ -97,7 +97,7 @@ func (x *logFileOutput) Write(p []byte) (int, error) {
 	if !bytes.HasSuffix(p, []byte("\n")) {
 		x.b.Write(p)
 	} else {
-		if _, err := fmt.Fprint(x.f, time.Now().Format("15:04:05"), " "); err != nil {
+		if _, err := fmt.Fprint(x.f, time.Now().Format("15:04:05.000"), " "); err != nil {
 			log.PrintErr(err)
 		}
 		if _, err := x.b.WriteTo(x.f); err != nil {
