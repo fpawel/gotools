@@ -18,7 +18,6 @@ import (
 type Cmd struct {
 	ExeName   string
 	ExeArgs   string
-	UseGUI    bool
 	NotifyGUI NotifyGUI
 }
 
@@ -38,7 +37,7 @@ func (c Cmd) Exec() {
 	writers := []io.Writer{logFileOutput}
 
 	var w *copydata.NotifyWindow
-	if c.UseGUI {
+	if len(c.NotifyGUI.WindowClass) > 0 {
 		writer := NewNotifyGUIWriter(c.NotifyGUI.WindowClass, c.NotifyGUI.MsgCodeConsole)
 		writers = append(writers, writer)
 		w = writer.(notifyWriter).w
