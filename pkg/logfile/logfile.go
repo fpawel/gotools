@@ -3,7 +3,6 @@ package logfile
 import (
 	"bufio"
 	"fmt"
-	"github.com/fpawel/gohelp/must"
 	"github.com/jmoiron/sqlx"
 	"github.com/powerman/structlog"
 	"os"
@@ -106,7 +105,7 @@ func readEntries(filename string, db *sqlx.DB) {
 		dbInsertEntry(db, ent)
 		lineNumber++
 	}
-	must.AbortIf(scanner.Err())
+	mustPanicIf(scanner.Err())
 }
 
 func filename(t time.Time, suffix string) string {
@@ -123,6 +122,12 @@ func ensureDir() error {
 		err = os.MkdirAll(logDir, os.ModePerm)
 	}
 	return err
+}
+
+func mustPanicIf(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 var (
