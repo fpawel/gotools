@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/iancoleman/strcase"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 
 	fmt.Println("sqlstr:", pathS)
 
-	r := regexp.MustCompile(`db_([A-Za-z]+)\.sql`)
+	r := regexp.MustCompile(`db_([\w\d_]+)\.sql`)
 
 	_ = filepath.Walk(pathS, func(path string, f os.FileInfo, _ error) error {
 		if f == nil || f.IsDir() {
@@ -48,7 +48,7 @@ func main() {
 
 		_, _ = fmt.Fprintln(fs, "package", filepath.Base(filepath.Dir(path)))
 		_, _ = fmt.Fprintln(fs, "")
-		_, _ = fmt.Fprintf(fs, "const SQL%s = `\n", strings.Title(s))
+		_, _ = fmt.Fprintf(fs, "const SQL%s = `\n", strcase.ToCamel(s))
 		_, _ = fs.Write(b)
 		_, _ = fmt.Fprintln(fs, "`")
 

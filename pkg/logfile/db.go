@@ -15,7 +15,6 @@ func newDB() *sqlx.DB {
 	conn.SetMaxOpenConns(1)
 	conn.SetConnMaxLifetime(0)
 	db := sqlx.NewDb(conn, "sqlite3")
-
 	db.MustExec(`
 CREATE TABLE entry(
 	tm DATETIME  NOT NULL ,
