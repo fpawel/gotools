@@ -28,5 +28,5 @@ func dbInsertEntry(db *sqlx.DB, ent Entry) {
 }
 
 func dbSelectEntries(db *sqlx.DB, filter string, entries *[]Entry) error {
-	return db.Select(&entries, "SELECT * FROM entry"+filter+" ORDER BY tm")
+	return db.Select(entries, "SELECT * FROM entry"+filter+" ORDER BY tm")
 }

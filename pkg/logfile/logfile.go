@@ -62,7 +62,8 @@ func Read(t time.Time, filter string) ([]Entry, error) {
 		if len(strTime) == 0 {
 			return nil
 		}
-		if fileTime, err := time.Parse(layoutDate, strTime); err == nil && fileTime == t {
+		fileTime, err := time.ParseInLocation(layoutDate, strTime, time.Local)
+		if err == nil && fileTime == t {
 			readEntries(path, db)
 		}
 		return nil
