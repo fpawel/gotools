@@ -3,7 +3,6 @@ package copydata
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fpawel/gohelp/winapp"
 	"github.com/lxn/win"
 	"reflect"
 	"syscall"
@@ -38,7 +37,7 @@ func (x WndClass) SendJson(msg uintptr, param interface{}) bool {
 }
 
 func (x WndClass) sendMsg(msg uintptr, b []byte) bool {
-	hWndSrc := winapp.FindWindow(x.Src)
+	hWndSrc := findWindowClass(x.Src)
 	hWndDest := findWindowClass(x.Dest)
 	if hWndSrc == 0 || hWndDest == 0 {
 		return false
