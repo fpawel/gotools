@@ -25,7 +25,7 @@ type WndClass struct {
 }
 
 func (x WndClass) SendString(msg uintptr, s string) bool {
-	return x.sendMsg(msg, utf16FromString(s))
+	return x.SendMessage(msg, utf16FromString(s))
 }
 
 func (x WndClass) SendJson(msg uintptr, param interface{}) bool {
@@ -36,7 +36,7 @@ func (x WndClass) SendJson(msg uintptr, param interface{}) bool {
 	return x.SendString(msg, string(b))
 }
 
-func (x WndClass) sendMsg(msg uintptr, b []byte) bool {
+func (x WndClass) SendMessage(msg uintptr, b []byte) bool {
 	hWndSrc := findWindowClass(x.Src)
 	hWndDest := findWindowClass(x.Dest)
 	if hWndSrc == 0 || hWndDest == 0 {
