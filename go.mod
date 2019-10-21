@@ -11,8 +11,8 @@ require (
 	github.com/lxn/walk v0.0.0-20191001144247-31870cf268b0
 	github.com/lxn/win v0.0.0-20190919090605-24c5960b03d8
 	github.com/mattn/go-sqlite3 v1.11.0
-	github.com/powerman/must v0.1.0
 	github.com/powerman/structlog v0.5.0
+	golang.org/x/sys v0.0.0-20191020212454-3e7259c5e7c2 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
 )

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/powerman/must"
 	"log"
 	"os"
 	"os/exec"
@@ -12,11 +11,10 @@ import (
 )
 
 func main() {
-	must.AbortIf = must.PanicIf
 	log.SetPrefix("buildmingw32: ")
 	log.SetFlags(0)
-	must.AbortIf(os.Setenv("GOARCH", "386"))
-	must.AbortIf(os.Setenv("CGO_ENABLED", "1"))
+	mustAbortIf(os.Setenv("GOARCH", "386"))
+	mustAbortIf(os.Setenv("CGO_ENABLED", "1"))
 	setMinGW32Path()
 	printArgs()
 	cmd := exec.Command(os.Args[1], os.Args[2:]...)
@@ -49,7 +47,7 @@ func setMinGW32Path() {
 		}
 		xs[i] = path.Join(
 			filepath.Dir(filepath.Dir(s)), "MinGW32", "bin")
-		must.AbortIf(os.Setenv("PATH", strings.Join(xs, ";")))
+		mustAbortIf(os.Setenv("PATH", strings.Join(xs, ";")))
 		log.Println("mingw -> MinGW32")
 		return
 	}
@@ -62,4 +60,10 @@ func printArgs() {
 		args[i] = v
 	}
 	log.Println(args...)
+}
+
+func mustAbortIf(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }
