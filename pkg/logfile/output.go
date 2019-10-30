@@ -6,6 +6,7 @@ import (
 	"github.com/powerman/structlog"
 	"io"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -19,15 +20,20 @@ func NewOutput(filenameSuffix string) (io.WriteCloser, error) {
 }
 
 type output struct {
-	f *os.File
-	b bytes.Buffer
+	f  *os.File
+	b  bytes.Buffer
+	mu sync.Mutex
 }
 
 func (x *output) Close() error {
+	x.mu.Lock()
+	defer x.mu.Unlock()
 	return x.f.Close()
 }
 
 func (x *output) Write(p []byte) (int, error) {
+	x.mu.Lock()
+	defer x.mu.Unlock()
 	x.b.Write(p)
 	if bytes.HasSuffix(p, []byte("\n")) {
 		if err := x.write(); err != nil {
