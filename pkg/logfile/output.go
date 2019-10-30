@@ -26,15 +26,17 @@ func (x *output) Close() error {
 }
 
 func (x *output) Write(p []byte) (int, error) {
-	if _, err := fmt.Fprint(x.f, time.Now().Format(layoutDatetime), " "); err != nil {
-		return 0, err
-	}
-	if _, err := x.f.Write(p); err != nil {
-		return 0, err
-	}
-	if !bytes.HasSuffix(p, []byte("\n")) {
-		if _, err := x.f.WriteString("\n"); err != nil {
+	for _, p := range bytes.Split(p, []byte{'\n'}) {
+		if _, err := fmt.Fprint(x.f, time.Now().Format(layoutDatetime), " "); err != nil {
 			return 0, err
+		}
+		if _, err := x.f.Write(p); err != nil {
+			return 0, err
+		}
+		if !bytes.HasSuffix(p, []byte("\n")) {
+			if _, err := x.f.WriteString("\n"); err != nil {
+				return 0, err
+			}
 		}
 	}
 	return len(p), nil
