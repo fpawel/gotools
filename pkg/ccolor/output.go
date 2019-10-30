@@ -10,17 +10,21 @@ import (
 
 type Output struct {
 	f  *os.File
-	ln bool
 }
 
 func NewWriter(f *os.File) io.Writer {
-	return &Output{f: f, ln: true}
+	return &Output{f: f}
 }
 
 func (x *Output) Write(p []byte) (int, error) {
-	if x.ln {
+	for _, p := range bytes.Split(p, []byte{'\n'}) {
+		if len(p) == 0 {
+			continue
+		}
 		Foreground(Green, true)
-		_, _ = fmt.Fprint(x.f, time.Now().Format("15:04:05"), " ")
+		if _, err := fmt.Fprint(x.f, time.Now().Format("15:04:05"), " "); err != nil {
+			return 0, err
+		}
 		fields := bytes.Fields(p)
 		if len(fields) > 1 {
 			switch string(fields[1]) {
@@ -34,8 +38,15 @@ func (x *Output) Write(p []byte) (int, error) {
 				Foreground(White, false)
 			}
 		}
-		defer ResetColor()
+		if _, err := x.f.Write(p); err != nil {
+			return 0, err
+		}
+		ResetColor()
+		if !bytes.HasSuffix(p, []byte("\n")) {
+			if _, err := x.f.WriteString("\n"); err != nil {
+				return 0, err
+			}
+		}
 	}
-	x.ln = bytes.HasSuffix(p, []byte("\n"))
-	return x.f.Write(p)
+	return len(p), nil
 }
