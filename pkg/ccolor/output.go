@@ -9,7 +9,7 @@ import (
 )
 
 type Output struct {
-	f  *os.File
+	f *os.File
 }
 
 func NewWriter(f *os.File) io.Writer {
