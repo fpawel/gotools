@@ -27,6 +27,9 @@ func (x *output) Close() error {
 
 func (x *output) Write(p []byte) (int, error) {
 	for _, p := range bytes.Split(p, []byte{'\n'}) {
+		if len(p) == 0 {
+			continue
+		}
 		if _, err := fmt.Fprint(x.f, time.Now().Format(layoutDatetime), " "); err != nil {
 			return 0, err
 		}
